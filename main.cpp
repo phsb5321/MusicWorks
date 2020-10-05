@@ -1,7 +1,10 @@
 #include <ncurses.h>
 #include <iostream>
 #include<string>
+<<<<<<< HEAD
 #include<pthread.h>
+=======
+>>>>>>> 2c94ce9ba43b93e2e35381948bed3c7268bf613a
 using namespace std;
 WINDOW *musicList;
   WINDOW *musicRow;
@@ -31,6 +34,7 @@ int main(int argc, char const *argv[])
     initscr();
     noecho();
     cbreak();
+<<<<<<< HEAD
     pthread_t th1;
     int yMax, xMax;
     yMax=LINES;
@@ -39,6 +43,15 @@ int main(int argc, char const *argv[])
     musicList = newwin(yMax , (xMax / 2)-1, 0, 0);
     musicRow=newwin(yMax-3,(xMax/2)-1,3,(xMax/2)+1);
     music =newwin(3,xMax/4,0,(xMax/2)+1);
+=======
+
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+     std::string s = std::to_string(yMax);
+    WINDOW *musicList = newwin(yMax , (xMax / 2)-1, 0, 0);
+    WINDOW *musicRow =newwin(yMax-3,(xMax/2)-1,3,(xMax/2)+1);
+    WINDOW *music =newwin(3,xMax/4,0,(xMax/2)+1);
+>>>>>>> 2c94ce9ba43b93e2e35381948bed3c7268bf613a
     refresh();
     box(musicRow,0,0);
     wrefresh(musicRow);
@@ -50,6 +63,7 @@ int main(int argc, char const *argv[])
     wattroff(music, A_REVERSE);
     wrefresh(music);
     int secondsLeft = 10;
+<<<<<<< HEAD
 
 int queue[yMax-5];
     for (int i=1;i<yMax-5;i++){
@@ -64,6 +78,31 @@ int queue[yMax-5];
     while (check==false)
     {
         for (int i = 1; i < LINES-2; i++)
+=======
+  do {
+      std::string n = std::to_string(secondsLeft);
+      string x="music_x:"+n;
+    mvwprintw(music,1,1,x.c_str());
+    wrefresh(music);
+    secondsLeft--;
+    werase(music);
+    box(music,0,0);
+    napms(1000);
+    
+    
+  } while (secondsLeft > 0);
+string musics[yMax-2] = {"Musics :"+s};
+    for (int i=1;i<sizeof(musics)/sizeof(musics[0]);i++){
+   std::string n = std::to_string(i);
+   musics[i]="music_"+n;
+    } 
+    int choice;
+    int highlight = 0;
+   int count =20;
+    while (count>0)
+    {
+        for (int i = 0; i < sizeof(musics)/sizeof(musics[0]); i++)
+>>>>>>> 2c94ce9ba43b93e2e35381948bed3c7268bf613a
         {
             if (i == highlight)
             {
@@ -86,6 +125,7 @@ int queue[yMax-5];
             break;
         case KEY_DOWN:
             highlight++;
+<<<<<<< HEAD
             if (highlight == yMax-2)
                 highlight = yMax-3;
                 break;
@@ -101,9 +141,16 @@ int queue[yMax-5];
              queue[curr]=highlight;
             mvwprintw(musicRow,curr,1,m.c_str());
             curr++;
+=======
+            if (highlight == sizeof(musics)/sizeof(musics[0]))
+                highlight = (sizeof(musics)/sizeof(musics[0]))-1;
+                break;
+        case KEY_RIGHT :
+         
+>>>>>>> 2c94ce9ba43b93e2e35381948bed3c7268bf613a
         default:
             break;
-        }
+        }count--;
     }
 
     endwin();
