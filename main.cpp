@@ -104,15 +104,19 @@ int main(int argc, char const *argv[])
             break;
         case 10:
             m = "music_" + f;
-            // queue[curr] = highlight;
-            if (index < yMax - 4)
+            if (curr < yMax - 4)
             {
+                queue[curr] = highlight;
                 mvwprintw(musicRow, curr, 2, m.c_str());
                 wrefresh(musicRow);
                 curr++;
                 index++;
             }
             break;
+        case 127:
+            wmove(musicRow, curr - 1, 2);
+            clrtoeol();
+            break; 
 
         default:
             break;
