@@ -1,4 +1,4 @@
 all: main
 main: main.cpp
-	g++  -pthread main.cpp -o main -lncurses
+	g++  -pthread -lncurses main.cpp -o main 
 

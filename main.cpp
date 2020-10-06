@@ -1,31 +1,36 @@
 #include <ncurses.h>
 #include <iostream>
-#include<string>
-#include<pthread.h>
+#include <string>
+#include <pthread.h>
 using namespace std;
+
 WINDOW *musicList;
-  WINDOW *musicRow;
-   WINDOW *music;
-   bool p=false;
-   int show(WINDOW *win, int* data) {
-   std::string n = std::to_string(*data);
-     string x="music_x: "+n;
-    mvwprintw(music,1,1,x.c_str());
-    wrefresh(music); 
+WINDOW *musicRow;
+WINDOW *music;
+bool p = false;
+
+int show(WINDOW *win, int *data)
+{
+    std::string n = std::to_string(*data);
+    string x = "music_x: " + n;
+    mvwprintw(music, 1, 1, x.c_str());
+    wrefresh(music);
     werase(music);
-    box(music,0,0);
-      napms(1000);
-   return 0;
+    box(music, 0, 0);
+    napms(1000);
+    return 0;
 }
-   void* play(void* data){
-      WINDOW *win = (WINDOW*)data;
-      int sec=10;
-    while ( !p &&sec>=0) {
-      show(win,&sec);
-    sec--;
-   }
-   return 0;
-   }
+void *play(void *data)
+{
+    WINDOW *win = (WINDOW *)data;
+    int sec = 10;
+    while (!p && sec >= 0)
+    {
+        show(win, &sec);
+        sec--;
+    }
+    return 0;
+}
 int main(int argc, char const *argv[])
 {
     initscr();
@@ -34,48 +39,51 @@ int main(int argc, char const *argv[])
     raw();
     pthread_t th1;
     int yMax, xMax;
-    yMax=LINES;
-    xMax=COLS;
-     std::string s = std::to_string(yMax);
-    musicList = newwin(yMax , (xMax / 2)-1, 0, 0);
-    musicRow=newwin(yMax-3,(xMax/2)-1,3,(xMax/2)+1);
-    music =newwin(3,xMax/4,0,(xMax/2)+1);
+    yMax = LINES;
+    xMax = COLS;
+    std::string s = std::to_string(yMax);
+    musicList = newwin(yMax, (xMax / 2) - 1, 0, 0);
+    musicRow = newwin(yMax - 3, (xMax / 2) - 1, 3, (xMax / 2) + 1);
+    music = newwin(3, xMax / 4, 0, (xMax / 2) + 1);
     refresh();
-    box(musicRow,0,0);
+    box(musicRow, 0, 0);
     wrefresh(musicRow);
     box(musicList, 0, 0);
     wrefresh(musicList);
-    box(music,0,0);
+    box(music, 0, 0);
     wrefresh(music);
     keypad(musicList, true);
     int secondsLeft = 10;
 
-int queue[yMax-5];
-    for (int i=1;i<yMax-5;i++){
-   queue[i]=0;
-    } 
+    int queue[yMax - 5];
+    for (int i = 1; i < yMax - 5; i++)
+    {
+        queue[i] = 0;
+    }
     int choice;
     int highlight = 1;
-   bool check=false;
-   int curr=1;
-   mvwprintw(musicList, 1, 1, "Musics :");
-  
-    while (check==false)
+    bool check = false;
+    int curr = 1;
+    mvwprintw(musicList, 1, 1, "Musics :");
+
+    int index = 0;
+
+    while (check == false)
     {
-        for (int i = 1; i < LINES-2; i++)
+        for (int i = 1; i < LINES - 2; i++)
         {
             if (i == highlight)
             {
                 wattron(musicList, A_REVERSE);
-            } 
+            }
             std::string n = std::to_string(i);
-            string m="music_"+n;
+            string m = "music_" + n;
             mvwprintw(musicList, i + 1, 1, m.c_str());
             wattroff(musicList, A_REVERSE);
         }
         choice = wgetch(musicList);
-      string m;
-      std::string f = std::to_string(highlight);
+        string m;
+        std::string f = std::to_string(highlight);
         switch (choice)
         {
         case KEY_UP:
@@ -85,27 +93,33 @@ int queue[yMax-5];
             break;
         case KEY_DOWN:
             highlight++;
-            if (highlight == yMax-2)
-                highlight = yMax-3;
-                break;
-        case KEY_RIGHT :
-        check=true;
-        break;
+            if (highlight == yMax - 2)
+                highlight = yMax - 3;
+            break;
+        case KEY_RIGHT:
+            check = true;
+            break;
         case KEY_LEFT:
-       pthread_create(&th1,NULL,play,music);
-       break;
-       case 10:
-             m="music_"+f;
-             queue[curr]=highlight;
-            mvwprintw(musicRow,curr,1,m.c_str());
-            curr++;
+            pthread_create(&th1, NULL, play, music);
+            break;
+        case 10:
+            m = "music_" + f;
+            // queue[curr] = highlight;
+            if (index < yMax - 4)
+            {
+                mvwprintw(musicRow, curr, 2, m.c_str());
+                wrefresh(musicRow);
+                curr++;
+                index++;
+            }
+            break;
+
         default:
             break;
         }
     }
 
     endwin();
- 
+
     return 0;
 }
- 
