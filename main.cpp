@@ -114,9 +114,16 @@ int main(int argc, char const *argv[])
             }
             break;
         case 127:
-            wmove(musicRow, curr - 1, 2);
-            clrtoeol();
-            break; 
+            if (curr > 1)
+            {
+                wmove(musicRow, curr - 1, 2);
+                wclrtoeol(musicRow);
+                box(musicRow, 0, 0);
+                wrefresh(musicRow);
+
+                curr--;
+            }
+            break;
 
         default:
             break;
