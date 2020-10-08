@@ -48,7 +48,6 @@ int main(int argc, char const *argv[])
     box(music,0,0);
     wrefresh(music);
     keypad(musicList, true);
-    int secondsLeft = 10;
 
 int queue[yMax-5];
     for (int i=1;i<yMax-5;i++){
@@ -92,13 +91,30 @@ int queue[yMax-5];
         check=true;
         break;
         case KEY_LEFT:
-       pthread_create(&th1,NULL,play,music);
+      // pthread_create(&th1,NULL,play,music);
        break;
-       case 10:
-             m="music_"+f;
-             queue[curr]=highlight;
-            mvwprintw(musicRow,curr,1,m.c_str());
-            curr++;
+       case 'a':
+             m = "music_" + f;
+             
+            if (curr < yMax - 4)
+            {queue[curr] = highlight;
+                mvwprintw(musicRow, curr, 2, m.c_str());
+                wrefresh(musicRow);
+                curr++;
+            }
+            break;
+            case 'd':
+              if (curr > 1)
+            {
+                wmove(musicRow, curr - 1, 2);
+                wclrtoeol(musicRow);
+                box(musicRow, 0, 0);
+                wrefresh(musicRow);
+                curr--;
+                queue[curr]=0;
+            }
+            break;
+
         default:
             break;
         }
