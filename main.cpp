@@ -7,48 +7,51 @@ WINDOW *musicList;
   WINDOW *musicRow;
    WINDOW *music;
    WINDOW *reproShow;
-   pthread_mutex_t mutex,mutex2,pauseMutex=PTHREAD_MUTEX_INITIALIZER;
-   pthread_t thPlay;
+   pthread_mutex_t mutex,mutex2,mutexPause=PTHREAD_MUTEX_INITIALIZER;
+   pthread_t play;
    bool repoMode=true;
    bool pause=true;
-   bool nextMusic=false;
    bool endMusic=true;
   int queue[25];
   int curr=1;
   int timer=0;
-  int musicP=0;
-  
-   void* show(void* arg) {
+  int musicP;
+  int count=0;
+   void* thSetPlay(void* arg) {
      wmove(music, 1, 1);
      wclrtoeol(music);
      box(music,0,0);
-       if(timer>0){
  std::string t = std::to_string(timer);
    std::string n = std::to_string(musicP);
      string x="music_"+n+": "+t;
     mvwprintw(music,1,1,x.c_str()); 
-       }
        wrefresh(music);
   pthread_exit(NULL);
 }
-   void* play(void* arg){
-       pthread_t s;
-     timer =5;
-    while (timer>0) {
-      while(pthread_mutex_lock(&pauseMutex));
-      while(pthread_mutex_lock(&mutex2));
-     pthread_create(&s,NULL,show,NULL);
-     pthread_join(s,NULL);
+   void* thPlay(void* arg){
+       pthread_t setPlay;
+     timer =10;
+    while (timer>0) { 
+    while(pthread_mutex_trylock(&mutexPause));
+      while(pthread_mutex_trylock(&mutex2));
+     pthread_create(&setPlay,NULL,thSetPlay,NULL);
+     pthread_join(setPlay,NULL);
      timer--;
-     pthread_mutex_unlock(&pauseMutex);
      pthread_mutex_unlock(&mutex2);
-    napms(1000);
-   
+        pthread_mutex_unlock(&mutexPause);
+      napms(1000); 
+    
    }  
+    while(pthread_mutex_trylock(&mutex2));
+     wmove(music, 1, 1);
+     wclrtoeol(music);
+     box(music,0,0);
+     wrefresh(music);
+       pthread_mutex_unlock(&mutex2);
    endMusic=true;
    return 0;
    } 
-   void* row(void* arg){
+   void* thSetRow(void* arg){
        endMusic=false;
        if(repoMode==true){
            musicP=queue[1];
@@ -88,7 +91,7 @@ WINDOW *musicList;
        } curr--;
        pthread_exit(NULL);
    } 
-   void* next(void* arg){
+   void* thNext(void* arg){
        musicP=queue[1];
  for(int i=1;i<24;i++){
                 queue[i]=queue[i+1];
@@ -108,16 +111,17 @@ WINDOW *musicList;
          curr--;
          pthread_exit(NULL);
    }
-   void* mang(void* arg){
-       pthread_t thRow;
-       while(true){
+   void* thRow(void* arg){
+       pthread_t setRow;
+       while(true){ 
+         while(pthread_mutex_trylock(&mutex));
         if(curr>1&&endMusic==true){
-          while(pthread_mutex_trylock(&mutex));
-        pthread_create(&thRow,NULL,row,NULL);
-        pthread_join(thRow,NULL);
-        pthread_mutex_unlock(&mutex);
-        pthread_create(&thPlay,NULL,play,NULL);
-        }
+        pthread_create(&setRow,NULL,thSetRow,NULL);
+        pthread_join(setRow,NULL);
+        pthread_create(&play,NULL,thPlay,NULL);
+        } 
+         pthread_mutex_unlock(&mutex);
+        
        }
    } 
   
@@ -128,11 +132,11 @@ int main(int argc, char const *argv[])
     cbreak();
     raw();
     curs_set(0);
-    pthread_t thMananger,thNext;
+    pthread_t row,next;
     int xMax;
     xMax=COLS;
     musicList = newwin(30 , (xMax / 2)-1, 0, 0);
-    musicRow=newwin(27,(xMax/2)-1,3,(xMax/2)+1);
+    musicRow=newwin(25,(xMax/2)-1,3,(xMax/2)+1);
     music =newwin(3,25,0,(xMax/2)+1);
     reproShow=newwin(3,25,0,(xMax/2)+26);
     refresh();
@@ -153,7 +157,7 @@ int main(int argc, char const *argv[])
     int highlight = 1;
    bool check=false;
    mvwprintw(musicList, 1, 1, "Musics :");
-  pthread_create(&thMananger,NULL,mang,NULL);
+   pthread_create(&row,NULL,thRow,NULL);
     while (check==false)
     {  while(pthread_mutex_trylock(&mutex));
      while(pthread_mutex_trylock(&mutex2));
@@ -167,11 +171,12 @@ int main(int argc, char const *argv[])
             string m="music_"+n;
             mvwprintw(musicList, i + 1, 1, m.c_str());
             wattroff(musicList, A_REVERSE);
-        } pthread_mutex_unlock(&mutex);
+        } 
+      pthread_mutex_unlock(&mutex);
          pthread_mutex_unlock(&mutex2);
-        choice = wgetch(musicList);
+       choice = wgetch(musicList);
       string m;
-      std::string f = std::to_string(highlight);
+      std::string f = std::to_string(highlight); 
         switch (choice)
         {
         case KEY_UP:
@@ -187,25 +192,23 @@ int main(int argc, char const *argv[])
         case KEY_RIGHT :
         check=true;
         break;
-        case KEY_LEFT:
-       break;
        case 'a':
-       while(pthread_mutex_trylock(&mutex));
+      while(pthread_mutex_trylock(&mutex));
          while(pthread_mutex_trylock(&mutex2));
              m = "music_" + f;
              
-            if (curr < 26)
+            if (curr < 24)
             {
                 queue[curr] = highlight;
                 mvwprintw(musicRow, curr, 2, m.c_str());
                 wrefresh(musicRow);
                 curr++;
             } 
-            pthread_mutex_unlock(&mutex);
+           pthread_mutex_unlock(&mutex);
             pthread_mutex_unlock(&mutex2);
             break;
             case 'd':
-             while(pthread_mutex_trylock(&mutex));
+            while(pthread_mutex_trylock(&mutex));
               while(pthread_mutex_trylock(&mutex2));
               if (curr > 1)
             {
@@ -216,29 +219,30 @@ int main(int argc, char const *argv[])
                 curr--;
                 queue[curr]=0;
             }
-              pthread_mutex_unlock(&mutex);
+             pthread_mutex_unlock(&mutex);
               pthread_mutex_unlock(&mutex2);
             break;
             case 'p':
             if(pause==false){
-                pthread_mutex_unlock(&pauseMutex);
-                 pause=true;
+              pause=true;
+                 pthread_mutex_unlock(&mutexPause);
+              
             } else {
-                pause=false; 
-               while(pthread_mutex_trylock(&pauseMutex));
+                pause=false;
+                 while(pthread_mutex_trylock(&mutexPause));
             }
             break;
             case 'n':
              while(pthread_mutex_trylock(&mutex));
-            if(curr>1){
-              pthread_cancel(thPlay);
-                pthread_create(&thNext,NULL,next,NULL);
-                pthread_join(thNext,NULL);
-                pthread_create(&thPlay,NULL,play,NULL);
-                 pthread_mutex_unlock(&pauseMutex);
-                   pthread_mutex_unlock(&mutex2);
-            }
-              pthread_mutex_unlock(&mutex);
+            if(curr>1&&pause==true){
+              pthread_cancel(play);
+                pthread_create(&next,NULL,thNext,NULL);
+                pthread_join(next,NULL);
+                pthread_mutex_unlock(&mutex2);
+                pthread_mutex_unlock(&mutexPause);
+                pthread_create(&play,NULL,thPlay,NULL);
+            } 
+             pthread_mutex_unlock(&mutex);
             break;
             case 'r':
             while(pthread_mutex_trylock(&mutex));
@@ -254,11 +258,11 @@ int main(int argc, char const *argv[])
                 mvwprintw(reproShow,1,1,"Sequencial Mode");
             } wrefresh(reproShow);
               pthread_mutex_unlock(&mutex2);
-               pthread_mutex_unlock(&mutex);
+              pthread_mutex_unlock(&mutex);
             break;
         default:
             break;
-        }
+        } 
     }
    
     endwin();
